@@ -1,42 +1,57 @@
-"""Einstiegspunkt für das Backend.
+"""
+backend/app/main.py
+-------------------
 
-Dieses Modul instanziiert die FastAPI‑App, bindet die Routen und startet den
-Scheduler.  Beim Start werden die Datenbanktabellen erstellt (nur zu
-Demonstrationszwecken).  In produktiven Umgebungen sollte die Migration über
-Alembic erfolgen.
+FastAPI-Anwendung inkl.:
+* CORS-Middleware für Frontend bei Render + lokales Dev-Frontend
+* Datenbanktabellen anlegen (SQLAlchemy)
+* APScheduler-Startup
+* API-Router einbinden
 """
 
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+# -------------------------- Datenbank --------------------------
 from .database import Base, engine
-from .api import router as api_router
-from .scheduler import start_scheduler
+Base.metadata.create_all(bind=engine)  # produktiv via Alembic migrieren
 
-logging.basicConfig(level=logging.INFO)
+# -------------------------- FastAPI ----------------------------
+app = FastAPI(
+    title="Accounting SaaS",
+    version="0.1.0",
+)
 
-app = FastAPI(title="Accounting SaaS", version="0.1.0")
+# -------------------------- CORS -------------------------------
+origins = [
+    "https://acct-frontend.onrender.com",  # Render-Frontend
+    "http://localhost:5173",               # lokales Vite-Dev-Frontend
+]
 
-# CORS für lokale Entwicklung
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Datenbanktabellen erstellen
-Base.metadata.create_all(bind=engine)
-
-# API‑Routen einbinden
+# -------------------------- API-Router -------------------------
+from .api import router as api_router  # noqa: E402  (nach FastAPI-Init importieren)
 app.include_router(api_router)
 
-# Scheduler starten
-scheduler = start_scheduler()
+# -------------------------- Scheduler --------------------------
+from .scheduler import scheduler  # noqa: E402
 
+@app.on_event("startup")
+async def start_scheduler() -> None:
+    if not scheduler.running:
+        scheduler.start()
+        logging.info("Scheduler gestartet")
 
 @app.on_event("shutdown")
-def shutdown_event():
-    """Scheduler beim Shutdown stoppen."""
-    scheduler.shutdown()
+async def shutdown_scheduler() -> None:
+    if scheduler.running:
+        scheduler.shutdown()
+        logging.info("Scheduler gestoppt")
