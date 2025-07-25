@@ -1,0 +1,40 @@
+# Render Blueprint – beschreibt die Services für das Buchhaltungssystem.
+#
+# Laut Render‑Dokumentation muss diese Datei render.yaml heißen und im
+# Repository‑Root liegen; Render liest sie beim Erstellen einer Blueprint‑App
+# automatisch ein【432159069719870†L190-L299】.
+
+services:
+  # Frontend: React‑App als statische Website
+  - type: web
+    name: accounting-frontend
+    env: static
+    staticPublishPath: frontend/dist
+    buildCommand: |
+      cd frontend && npm install && npm run build
+    # Optional: HTTP‑Header anpassen, um lange Cache‑Zeiten zu erlauben
+
+  # Backend: FastAPI‑Anwendung aus Dockerfile
+  - type: web
+    name: accounting-backend
+    env: docker
+    dockerContext: .
+    dockerfilePath: backend/Dockerfile
+    plan: free
+    healthCheckPath: /docs
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: accounting-db
+          property: connectionString
+      - key: MAILJET_API_KEY
+        sync: false  # Key muss in Render eingegeben werden
+      - key: MAILJET_API_SECRET
+        sync: false
+
+databases:
+  - name: accounting-db
+    databaseName: accounting
+    user: accounting_user
+    ipAllowList: []  # Öffentliche Zugriffe gesperrt
+    plan: free
