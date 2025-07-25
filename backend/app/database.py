@@ -1,32 +1,57 @@
-"""Datenbankverbindung für das Buchhaltungssystem.
+"""
+backend/app/database.py
+-----------------------
 
-Dieses Modul richtet eine SQLAlchemy‑Engine und eine SessionFactory ein.
-Die Verbindungsdaten werden über die Umgebungsvariable ``DATABASE_URL``
-bezogen.  Bei Verwendung von Render oder Railway wird diese Variable in
-der PaaS‑Konfiguration gesetzt.
+Stellt Engine, SessionFactory und Base für SQLAlchemy bereit.
+Die Datenbank‑URL wird ausschließlich aus der Environment‑Variable
+DATABASE_URL gelesen (z. B. von Render). Existiert sie nicht,
+stoppt das Programm mit einer klaren Fehlermeldung.
 """
 
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
+# --------------------------------------------------------------------
+# 1. DATABASE_URL aus Environment lesen
+# --------------------------------------------------------------------
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError(
+        "❌  DATABASE_URL ist nicht gesetzt! "
+        "Lege sie im Render‑Dashboard unter Service → Environment an."
+    )
 
-# Der Datenbank-URL muss das Schema ``postgresql+psycopg2://`` nutzen.
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg2://user:pass@localhost:5432/accounting")
-
+# --------------------------------------------------------------------
+# 2. Engine erstellen
+#    pool_pre_ping=True verhindert Idle‑Timeouts in der Cloud
+# --------------------------------------------------------------------
 engine = create_engine(
     DATABASE_URL,
-    echo=False,
     pool_pre_ping=True,
+    future=True,
 )
 
-SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+# --------------------------------------------------------------------
+# 3. SessionFactory konfigurieren
+# --------------------------------------------------------------------
+SessionLocal = sessionmaker(
+    bind=engine,
+    autoflush=False,
+    autocommit=False,
+    future=True,
+)
 
+# --------------------------------------------------------------------
+# 4. Declarative Base
+# --------------------------------------------------------------------
 Base = declarative_base()
 
-
+# --------------------------------------------------------------------
+# 5. Dependency für FastAPI‑Endpoints
+# --------------------------------------------------------------------
 def get_db():
-    """Dependency für FastAPI‑Routen zur Bereitstellung einer Datenbanksitzung."""
+    """Yield‑basierte DB‑Session für FastAPI Depends."""
     db = SessionLocal()
     try:
         yield db
