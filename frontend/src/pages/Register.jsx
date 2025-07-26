@@ -1,36 +1,37 @@
 import React, { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase.js';
 
 /**
- * Login‑Seite für bestehende Nutzer.
+ * Registrierungs‑Seite für neue Nutzer.
  *
- * Bei erfolgreichem Login wird das Firebase ID‑Token in den LocalStorage
- * geschrieben und der Callback `onLogin` aufgerufen, um den
- * Authentifizierungsstatus im Eltern‑Component zu aktualisieren.
+ * Nach erfolgreicher Registrierung wird das Firebase ID‑Token gespeichert
+ * und der Callback `onRegister` aufgerufen, um in der App weiterzuleiten.
  */
-export default function Login({ onLogin }) {
+export default function Register({ onRegister }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   /**
-   * Meldet den Benutzer mittels Firebase E‑Mail/Passwort‑Authentifizierung an.
+   * Erstellt einen neuen Benutzeraccount bei Firebase.
    */
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      setError('Passwörter stimmen nicht überein');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const { user } = await signInWithEmailAndPassword(auth, email, password);
-      // Nach dem Login das ID‑Token holen und speichern.
+      const { user } = await createUserWithEmailAndPassword(auth, email, password);
       const idToken = await user.getIdToken();
       localStorage.setItem('idToken', idToken);
-      // Callback ausführen, damit App den Status aktualisiert.
-      if (onLogin) onLogin();
+      if (onRegister) onRegister();
     } catch (err) {
-      // Fehler (z. B. falsches Passwort) anzeigen.
       setError(err.message);
     } finally {
       setLoading(false);
@@ -39,7 +40,7 @@ export default function Login({ onLogin }) {
 
   return (
     <div className="max-w-md mx-auto mt-10 p-6 border rounded shadow">
-      <h2 className="text-xl font-semibold mb-4">Anmeldung</h2>
+      <h2 className="text-xl font-semibold mb-4">Registrieren</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="p-2 text-sm text-red-700 bg-red-100 rounded">{error}</div>
@@ -70,12 +71,25 @@ export default function Login({ onLogin }) {
             className="mt-1 w-full px-3 py-2 border border-gray-300 rounded"
           />
         </div>
+        <div>
+          <label htmlFor="confirmPassword" className="block text-sm font-medium">
+            Passwort bestätigen
+          </label>
+          <input
+            id="confirmPassword"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded"
+          />
+        </div>
         <button
           type="submit"
           disabled={loading}
-          className="w-full px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          className="w-full px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
         >
-          {loading ? 'Anmelden…' : 'Anmelden'}
+          {loading ? 'Registrieren…' : 'Registrieren'}
         </button>
       </form>
     </div>
