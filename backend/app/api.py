@@ -1,9 +1,9 @@
 """FastAPI‑Router für die Geschäftsvorgänge.
 
 Diese Datei definiert die REST‑Endpunkte des Buchhaltungssystems.  Belege
-werden per Multipart‑Upload hochgeladen, mit der OCR‑Funktion analysiert und
-in der Datenbank gespeichert.  UStVA‑Berechnungen summieren die Netto‑ und
-Steuerbeträge der Belege eines Zeitraums.
+werden per Multipart‑Upload hochgeladen, mit der OCR‑Funktion analysiert
+und in der Datenbank gespeichert.  UStVA‑Berechnungen summieren die
+Netto‑ und Steuerbeträge der Belege eines Zeitraums.
 """
 
 import os
@@ -41,20 +41,20 @@ async def upload_receipt(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
-    # Sicherstellen, dass Kunde existiert
+    # Ensure that the customer exists
     customer = db.query(models.Customer).get(customer_id)
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
-    # Temporären Pfad anlegen
+    # Create a temporary upload directory
     uploads_dir = os.getenv("UPLOADS_DIR", "/tmp/uploads")
     os.makedirs(uploads_dir, exist_ok=True)
     file_path = os.path.join(uploads_dir, file.filename)
     with open(file_path, "wb") as f:
         content = await file.read()
         f.write(content)
-    # OCR analysieren
+    # OCR analyse
     parsed = ocr.parse_receipt_pdf(file_path)
-    # Receipt in DB speichern
+    # Save receipt in database
     receipt = models.Receipt(
         customer_id=customer_id,
         file_path=file_path,
