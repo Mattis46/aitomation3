@@ -2,8 +2,8 @@
 
 Diese Modelle bilden die grundlegenden Entitäten ab: Kunden, Belege,
 Umsatzsteuervoranmeldungen und offene Posten.  Die Felder sind bewusst
-einfach gehalten; für produktive Systeme sollten Indizes, Default‑Werte
-und Constraints ergänzt werden.
+einfach gehalten; für produktive Systeme sollten Indizes,
+Default‑Werte und Constraints ergänzt werden.
 """
 
 from datetime import date, datetime

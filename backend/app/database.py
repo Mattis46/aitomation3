@@ -4,7 +4,7 @@ backend/app/database.py
 
 Stellt Engine, SessionFactory und Base für SQLAlchemy bereit.
 Die Datenbank‑URL wird ausschließlich aus der Environment‑Variable
-DATABASE_URL gelesen (z. B. von Render). Existiert sie nicht,
+``DATABASE_URL`` gelesen (z. B. von Render).  Existiert sie nicht,
 stoppt das Programm mit einer klaren Fehlermeldung.
 """
 
@@ -13,7 +13,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 # --------------------------------------------------------------------
-# 1. DATABASE_URL aus Environment lesen
+# 1. Read DATABASE_URL from environment
 # --------------------------------------------------------------------
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
@@ -23,8 +23,8 @@ if not DATABASE_URL:
     )
 
 # --------------------------------------------------------------------
-# 2. Engine erstellen
-#    pool_pre_ping=True verhindert Idle‑Timeouts in der Cloud
+# 2. Create Engine
+#    pool_pre_ping=True prevents idle timeouts in cloud deployments
 # --------------------------------------------------------------------
 engine = create_engine(
     DATABASE_URL,
@@ -33,7 +33,7 @@ engine = create_engine(
 )
 
 # --------------------------------------------------------------------
-# 3. SessionFactory konfigurieren
+# 3. Configure SessionFactory
 # --------------------------------------------------------------------
 SessionLocal = sessionmaker(
     bind=engine,
@@ -48,10 +48,10 @@ SessionLocal = sessionmaker(
 Base = declarative_base()
 
 # --------------------------------------------------------------------
-# 5. Dependency für FastAPI‑Endpoints
+# 5. Dependency for FastAPI endpoints
 # --------------------------------------------------------------------
 def get_db():
-    """Yield‑basierte DB‑Session für FastAPI Depends."""
+    """Yield‑based DB session for FastAPI Depends."""
     db = SessionLocal()
     try:
         yield db

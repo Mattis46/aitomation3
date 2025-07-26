@@ -2,11 +2,11 @@
 backend/app/main.py
 -------------------
 
-FastAPI-Anwendung inkl.:
-* CORS-Middleware für Frontend bei Render + lokales Dev-Frontend
+FastAPI‑Anwendung inkl.:
+* CORS‑Middleware für Frontend bei Render + lokales Dev‑Frontend
 * Datenbanktabellen anlegen (SQLAlchemy)
-* APScheduler-Startup
-* API-Router einbinden
+* APScheduler‑Startup
+* API‑Router einbinden
 """
 
 import logging

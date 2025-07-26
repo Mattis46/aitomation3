@@ -1,9 +1,9 @@
 """Pydantic‑Schemas für die API.
 
-Die Pydantic‑Modelle dienen als Serialisierungs‑ und Validierungsschicht zwischen
-der FastAPI‑Anwendung und den SQLAlchemy‑Objekten.  Sie verwenden das
-konfigurierbare Attribut ``orm_mode``, um SQLAlchemy‑Objekte automatisch in
-Pydantic‑Modelle zu konvertieren.
+Die Pydantic‑Modelle dienen als Serialisierungs‑ und Validierungsschicht
+zwischen der FastAPI‑Anwendung und den SQLAlchemy‑Objekten.  Sie
+verwenden das konfigurierbare Attribut ``orm_mode``, um
+SQLAlchemy‑Objekte automatisch in Pydantic‑Modelle zu konvertieren.
 """
 
 from datetime import date, datetime
