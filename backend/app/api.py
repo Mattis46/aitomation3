@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from .database import get_db
 from . import models, schemas, ocr
+from .ustva_engine import calculate_ustva
 
 router = APIRouter()
 
@@ -128,6 +129,54 @@ def generate_ustva(customer_id: int, period: str, db: Session = Depends(get_db))
 @router.get("/ustva/{customer_id}", response_model=list[schemas.UstvaRead])
 def list_ustva(customer_id: int, db: Session = Depends(get_db)):
     return db.query(models.Ustva).filter(models.Ustva.customer_id == customer_id).all()
+
+# ------------------------------------------------------------
+#  UStVA‑Berechnung
+#
+# Neben den klassischen CRUD‑Funktionen stellt dieses Backend eine
+# zentrale UStVA‑Berechnung zur Verfügung.  Das Modell
+# ``calculate_ustva`` aus ``ustva_engine.py`` aggregiert alle
+# Belege eines Kunden für einen bestimmten Monat und gibt die
+# Umsatzsteuer (umsatzsteuer), die Vorsteuer (vorsteuer) und die
+# Zahllast (zahllast) zurück.  Dieser Endpunkt dient dazu, das
+# Ergebnis direkt über die API abzufragen, ohne einen neuen
+# ``Ustva``‑Eintrag in der Datenbank anzulegen.
+
+@router.get(
+    "/ustva/calc/{customer_id}/{year}/{month}",
+    response_model=dict,
+    summary="Berechne UStVA für einen Kunden und Zeitraum",
+)
+def calc_ustva(
+    customer_id: int,
+    year: int,
+    month: int,
+    db: Session = Depends(get_db),
+):
+    """Aggregiere die Belege eines Kunden für einen Monat und gib die
+    UStVA‑Summen zurück.
+
+    Dieser Endpunkt ruft :func:`calculate_ustva` aus dem Modul
+    :mod:`app.ustva_engine` auf.  Er erstellt **keinen** neuen
+    ``Ustva``‑Datensatz, sondern gibt lediglich die berechneten
+    Werte als JSON zurück.
+
+    Args:
+        customer_id: ID des Kunden, dessen Belege aggregiert werden sollen.
+        year: Vierstellige Jahreszahl, z.\ B. 2025.
+        month: Monat (1–12).
+        db: Datenbank‑Session (wird automatisch injiziert).
+
+    Returns:
+        Ein Wörterbuch mit den Schlüsseln ``monat``, ``umsatzsteuer``,
+        ``vorsteuer`` und ``zahllast``.
+    """
+    try:
+        result = calculate_ustva(customer_id, year, month, db=db)
+    except Exception as exc:
+        # Bei Fehlern eine aussagekräftige Antwort generieren
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return JSONResponse(content=result)
 
 
 @router.post("/open-items", response_model=schemas.OpenItemRead)
